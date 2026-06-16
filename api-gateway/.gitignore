@@ -4,6 +4,23 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Local configuration and secrets ###
+.env
+.env.*
+!.env.example
+src/main/resources/application-local.yml
+src/main/resources/application-local.yaml
+src/main/resources/application-secrets.yml
+src/main/resources/application-secrets.yaml
+*.pem
+*.key
+
+### Runtime output ###
+*.log
+logs/
+hs_err_pid*.log
+replay_pid*.log
+
 ### STS ###
 .apt_generated
 .classpath

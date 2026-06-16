@@ -12,9 +12,9 @@ public class Validator {
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     public static final List<String> endponints = List.of(
-            "/register-user",
-            "/generate-token",
-            "/validate-token/{token}"
+            "/auth/register-user",
+            "/auth/generate-token",
+            "/auth/validate-token/{token}"
     );
 
     public Predicate<ServerHttpRequest> predicate = serverHttpRequest -> {
