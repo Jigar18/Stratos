@@ -33,7 +33,7 @@ public class AuthFilter extends AbstractGatewayFilterFactory<AuthFilter.Config> 
     @Override
     public GatewayFilter apply(Config config) {
         return ((exchange, chain) -> {
-            if (validator.predicate.test(exchange.getRequest())) {
+            if (!validator.predicate.test(exchange.getRequest())) {
                 return chain.filter(exchange);
             }
 

@@ -1,6 +1,7 @@
 package com.stratos.api_gateway.filter;
 
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 import org.springframework.stereotype.Component;
@@ -11,12 +12,11 @@ import java.util.Base64;
 
 @Component
 public class JWTUtil {
-    private static final String SECRET_KEY =
-            "sfjdgndjfsnifsjonflndsgjosnfjbvnjofHJAOFHUO2E40I3UWE0F8IDSHGUORHBNWUOFHVN0WIRHJB0WIJF40GH";
+    private static final String SECRET_KEY = "44EFF29E658A0CBB0B7E849586DB2171144B1C6E210FA7A9D9BAE01D30174D43";
 
     private SecretKey getKey() {
-        byte[] bytes = SECRET_KEY.getBytes(StandardCharsets.UTF_8);
-        return Keys.hmacShaKeyFor(bytes);
+        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public Claims validateToken(String token) {
@@ -25,13 +25,13 @@ public class JWTUtil {
                     .verifyWith(getKey())
                     .build()
                     .parseSignedClaims(token)
-                    .getPayload();              // return claims so the filter can use them
+                    .getPayload();
         } catch (ExpiredJwtException e) {
-            throw new RuntimeException("Token expired", e);       // → 401, tell client to refresh
+            throw new RuntimeException("Token expired", e);
         } catch (UnsupportedJwtException | MalformedJwtException e) {
-            throw new RuntimeException("Invalid token format", e); // → 401
+            throw new RuntimeException("Invalid token format", e);
         } catch (SignatureException e) {
-            throw new RuntimeException("Invalid signature", e);    // → 401, possible tampering
+            throw new RuntimeException("Invalid signature", e);
         }
     }
 }
