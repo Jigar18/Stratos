@@ -1,19 +1,17 @@
-server:
-  port: 8082
-
 spring:
   application:
     name: auth_service
   datasource:
-    url: jdbc:postgresql://localhost:5431/stratos?options=-c%20timezone%3DUTC
-    username: postgres
+    url: jdbc:postgresql://localhost:5431/stratos
+    username: localhost
     password: jigar@1612
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
         format_sql: true
     database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect

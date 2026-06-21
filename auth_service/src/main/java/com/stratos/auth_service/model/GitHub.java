@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Setter
 @RequiredArgsConstructor
 @AllArgsConstructor
-@Table(name = "github")
+@Table(name = "github", schema = "auth_service")
 public class GitHub {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,12 +25,15 @@ public class GitHub {
     @Column(name = "github_user_name")
     private String gitHubUserName;
 
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private User userID;
+    private User user;
 
     @PrePersist
     protected void onCreate() {
-        LocalDateTime createdAt = LocalDateTime.now();
+        createdAt = LocalDateTime.now();
     }
 }
