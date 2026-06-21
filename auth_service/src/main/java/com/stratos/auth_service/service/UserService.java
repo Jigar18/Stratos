@@ -1,8 +1,10 @@
 package com.stratos.auth_service.service;
 
+import com.stratos.auth_service.dto.JWTTokenResponseDTO;
 import com.stratos.auth_service.dto.UserDTO;
 import com.stratos.auth_service.model.User;
 import com.stratos.auth_service.repository.UserRepository;
+import com.stratos.auth_service.util.JWTUtil;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -11,10 +13,12 @@ import org.springframework.stereotype.Service;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JWTUtil jwtUtil;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,  JWTUtil jwtUtil) {
         this.userRepository = userRepository;
-        this.passwordEncoder = new BCryptPasswordEncoder();
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
     }
 
     public UserDTO saveUser(User user) {
@@ -25,5 +29,14 @@ public class UserService {
                 savedUser.getUsername(),
                 savedUser.getEmail()
         );
+    }
+
+    public JWTTokenResponseDTO generateToken(String username) {
+        String token = jwtUtil.generateToken(username);
+        JWTTokenResponseDTO jwtTokenResponseDTO = new JWTTokenResponseDTO();
+        jwtTokenResponseDTO.setToken(token);
+        jwtTokenResponseDTO.setType("Bearer");
+        jwtTokenResponseDTO.setExpiresAt(jwtUtil.getExpirationDate(token).toString());
+        return jwtTokenResponseDTO;
     }
 }

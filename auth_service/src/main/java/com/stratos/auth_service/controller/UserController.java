@@ -1,10 +1,15 @@
 package com.stratos.auth_service.controller;
 
+import com.stratos.auth_service.dto.JWTTokenResponseDTO;
+import com.stratos.auth_service.dto.LoginRequestDTO;
 import com.stratos.auth_service.dto.UserDTO;
 import com.stratos.auth_service.model.User;
 import com.stratos.auth_service.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,14 +19,34 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/auth")
 public class UserController {
     private final UserService userService;
+    private final AuthenticationManager authenticationManager;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService,  AuthenticationManager authenticationManager) {
         this.userService = userService;
+        this.authenticationManager = authenticationManager;
     }
 
-    @PostMapping("/register")
+    @PostMapping("/register-user")
     public ResponseEntity<UserDTO> registerUser(@RequestBody User user) {
         UserDTO userDTO = userService.saveUser(user);
          return new ResponseEntity<>(userDTO, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/generate-token")
+    public ResponseEntity<JWTTokenResponseDTO> generateToken(@RequestBody LoginRequestDTO loginRequestDTO) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequestDTO.getUsername(), loginRequestDTO.getPassword()));
+
+            if (authentication.isAuthenticated()) {
+                JWTTokenResponseDTO jwtTokenResponseDTO = userService.generateToken(loginRequestDTO.getUsername());
+                return new ResponseEntity<>(jwtTokenResponseDTO, HttpStatus.OK);
+            }
+            else {
+                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            }
+        }
+        catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
     }
 }
