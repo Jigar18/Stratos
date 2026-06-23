@@ -2,8 +2,8 @@ package com.stratos.auth_service.controller;
 
 import com.stratos.auth_service.dto.JWTTokenResponseDTO;
 import com.stratos.auth_service.dto.LoginRequestDTO;
+import com.stratos.auth_service.dto.RegisterUserRequestDTO;
 import com.stratos.auth_service.dto.UserDTO;
-import com.stratos.auth_service.model.User;
 import com.stratos.auth_service.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,14 +21,14 @@ public class UserController {
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
 
-    public UserController(UserService userService,  AuthenticationManager authenticationManager) {
+    public UserController(UserService userService, AuthenticationManager authenticationManager) {
         this.userService = userService;
         this.authenticationManager = authenticationManager;
     }
 
     @PostMapping("/register-user")
-    public ResponseEntity<UserDTO> registerUser(@RequestBody User user) {
-        UserDTO userDTO = userService.saveUser(user);
+    public ResponseEntity<UserDTO> registerUser(@RequestBody RegisterUserRequestDTO request) {
+        UserDTO userDTO = userService.saveUser(request);
          return new ResponseEntity<>(userDTO, HttpStatus.CREATED);
     }
 

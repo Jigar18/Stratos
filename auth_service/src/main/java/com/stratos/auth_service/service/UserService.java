@@ -1,6 +1,7 @@
 package com.stratos.auth_service.service;
 
 import com.stratos.auth_service.dto.JWTTokenResponseDTO;
+import com.stratos.auth_service.dto.RegisterUserRequestDTO;
 import com.stratos.auth_service.dto.UserDTO;
 import com.stratos.auth_service.model.User;
 import com.stratos.auth_service.repository.UserRepository;
@@ -21,8 +22,12 @@ public class UserService {
         this.jwtUtil = jwtUtil;
     }
 
-    public UserDTO saveUser(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+    public UserDTO saveUser(RegisterUserRequestDTO request) {
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setEmail(request.getEmail());
+
         User savedUser = userRepository.save(user);
         return new UserDTO(
                 savedUser.getId(),
