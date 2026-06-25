@@ -11,6 +11,8 @@ import javax.crypto.SecretKey;
 @Component
 public class JWTUtil {
     private static final String SECRET_KEY = "7EB9818459D3E8757A7A8B514A5571C42959D7F7043C452EE2B6E9C797758CCB";
+    private static final String EXPECTED_ISSUER = "stratos-auth-service";
+    private static final String EXPECTED_AUDIENCE = "stratos-api-gateway";
 
     private SecretKey getKey() {
         byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
@@ -21,6 +23,8 @@ public class JWTUtil {
         try {
             return Jwts.parser()
                     .verifyWith(getKey())
+                    .requireIssuer(EXPECTED_ISSUER)
+                    .requireAudience(EXPECTED_AUDIENCE)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
