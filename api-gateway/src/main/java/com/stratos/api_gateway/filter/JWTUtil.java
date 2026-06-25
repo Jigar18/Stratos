@@ -7,12 +7,10 @@ import io.jsonwebtoken.security.SignatureException;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 @Component
 public class JWTUtil {
-    private static final String SECRET_KEY = "44EFF29E658A0CBB0B7E849586DB2171144B1C6E210FA7A9D9BAE01D30174D43";
+    private static final String SECRET_KEY = "7EB9818459D3E8757A7A8B514A5571C42959D7F7043C452EE2B6E9C797758CCB";
 
     private SecretKey getKey() {
         byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
@@ -27,11 +25,11 @@ public class JWTUtil {
                     .parseSignedClaims(token)
                     .getPayload();
         } catch (ExpiredJwtException e) {
-            throw new RuntimeException("Token expired", e);
+            throw e;
         } catch (UnsupportedJwtException | MalformedJwtException e) {
-            throw new RuntimeException("Invalid token format", e);
+            throw e;
         } catch (SignatureException e) {
-            throw new RuntimeException("Invalid signature", e);
+            throw e;
         }
     }
 }

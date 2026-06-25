@@ -40,7 +40,7 @@ public class AuthFilter extends AbstractGatewayFilterFactory<AuthFilter.Config> 
             String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                throw new RuntimeException("Invalid Authorization header format");
+                return onError(exchange, HttpStatus.UNAUTHORIZED, "Missing or invalid Authorization header");
             }
             String token = authHeader.substring(7);
 
