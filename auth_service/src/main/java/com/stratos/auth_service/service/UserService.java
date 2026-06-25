@@ -6,7 +6,6 @@ import com.stratos.auth_service.dto.UserDTO;
 import com.stratos.auth_service.model.User;
 import com.stratos.auth_service.repository.UserRepository;
 import com.stratos.auth_service.util.JWTUtil;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +36,9 @@ public class UserService {
     }
 
     public JWTTokenResponseDTO generateToken(String username) {
-        String token = jwtUtil.generateToken(username);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        String token = jwtUtil.generateToken(user);
         JWTTokenResponseDTO jwtTokenResponseDTO = new JWTTokenResponseDTO();
         jwtTokenResponseDTO.setToken(token);
         jwtTokenResponseDTO.setType("Bearer");

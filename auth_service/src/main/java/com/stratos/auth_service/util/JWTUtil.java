@@ -1,5 +1,6 @@
 package com.stratos.auth_service.util;
 
+import com.stratos.auth_service.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -8,8 +9,6 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 @Component
 public class JWTUtil {
@@ -20,16 +19,17 @@ public class JWTUtil {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(String username){
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("username", username);
+    public String generateToken(User user){
+        if (user.getId() == null) {
+            throw new IllegalArgumentException("Cannot generate JWT before user has a database id");
+        }
 
         return Jwts
                 .builder()
-                .subject(username)
+                .claim("username", user.getUsername())
+                .subject(String.valueOf(user.getId()))
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 24))
-                .claims(claims)
                 .signWith(getSigningKeys())
                 .compact();
     }

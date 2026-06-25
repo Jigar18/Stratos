@@ -13,8 +13,7 @@ public class Validator {
 
     public static final List<String> endponints = List.of(
             "/auth/register-user",
-            "/auth/generate-token",
-            "/auth/validate-token/{token}"
+            "/auth/generate-token"
     );
 
     public Predicate<ServerHttpRequest> predicate = serverHttpRequest -> {

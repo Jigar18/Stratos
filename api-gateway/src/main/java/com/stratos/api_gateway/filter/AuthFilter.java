@@ -46,10 +46,20 @@ public class AuthFilter extends AbstractGatewayFilterFactory<AuthFilter.Config> 
 
             try {
                 Claims claims = jwtUtil.validateToken(token);
+                String userId = claims.getSubject();
+                String username = claims.get("username", String.class);
+
+                if (userId == null || userId.isBlank() || username == null || username.isBlank()) {
+                    return onError(exchange, HttpStatus.UNAUTHORIZED, "Invalid token claims");
+                }
 
                 ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-                        .header("X-User-Id", claims.getSubject())
-                        .header("X-User-Role", claims.get("role", String.class))
+                        .headers(headers -> {
+                            headers.remove("X-User-Id");
+                            headers.remove("X-Username");
+                            headers.set("X-User-Id", userId);
+                            headers.set("X-Username", username);
+                        })
                         .build();
 
                 return chain.filter(exchange.mutate().request(mutatedRequest).build());

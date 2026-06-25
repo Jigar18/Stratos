@@ -33,12 +33,12 @@ public class UserController {
     }
 
     @PostMapping("/generate-token")
-    public ResponseEntity<JWTTokenResponseDTO> generateToken(@RequestBody LoginRequestDTO loginRequestDTO) {
+    public ResponseEntity<JWTTokenResponseDTO> generateToken(@RequestBody LoginRequestDTO request) {
         try {
-            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequestDTO.getUsername(), loginRequestDTO.getPassword()));
+            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
             if (authentication.isAuthenticated()) {
-                JWTTokenResponseDTO jwtTokenResponseDTO = userService.generateToken(loginRequestDTO.getUsername());
+                JWTTokenResponseDTO jwtTokenResponseDTO = userService.generateToken(request.getUsername());
                 return new ResponseEntity<>(jwtTokenResponseDTO, HttpStatus.OK);
             }
             else {
