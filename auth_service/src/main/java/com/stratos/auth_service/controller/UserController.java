@@ -30,7 +30,7 @@ public class UserController {
     public ResponseEntity<UserDTO> registerUser(@RequestBody RegisterUserRequestDTO request) {
         UserDTO userDTO = userService.saveUser(request);
          return new ResponseEntity<>(userDTO, HttpStatus.CREATED);
-    }
+    }   
 
     @PostMapping("/generate-token")
     public ResponseEntity<JWTTokenResponseDTO> generateToken(@RequestBody LoginRequestDTO request) {
