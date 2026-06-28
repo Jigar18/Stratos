@@ -2,6 +2,8 @@ server:
   port: 8081
 
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: api-gateway
 
@@ -14,3 +16,8 @@ spring:
             - Path=/auth/**
           filters:
             - AuthFilter
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
+  issuer: ${JWT_ISSUER}
+  audience: ${JWT_AUDIENCE}

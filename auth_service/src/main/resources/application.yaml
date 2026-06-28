@@ -2,14 +2,22 @@ server:
   port: 8082
 
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: auth_service
   datasource:
-    url: jdbc:postgresql://localhost:5431/stratos?options=-c%20timezone%3DUTC
-    username: postgres
-    password: jigar@1612
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
     database: postgresql
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
+  issuer: ${JWT_ISSUER}
+  audience: ${JWT_AUDIENCE}
+  expiration-ms: ${JWT_EXPIRATION_MS}
