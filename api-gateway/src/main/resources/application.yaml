@@ -3,19 +3,21 @@ server:
 
 spring:
   config:
-    import: optional:file:.env[.properties]
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:api-gateway/.env[.properties]
   application:
     name: api-gateway
 
   cloud:
     gateway:
-      routes:
-        - id: Auth
-          uri: http://localhost:8082
-          predicates:
-            - Path=/auth/**
-          filters:
-            - AuthFilter
+      server:
+        webflux:
+          routes:
+            - id: Auth
+              uri: http://localhost:8082
+              predicates:
+                - Path=/auth/**
 
 jwt:
   secret-key: ${JWT_SECRET_KEY}

@@ -29,7 +29,7 @@ public class UserController {
     @PostMapping("/register-user")
     public ResponseEntity<UserDTO> registerUser(@RequestBody RegisterUserRequestDTO request) {
         UserDTO userDTO = userService.saveUser(request);
-         return new ResponseEntity<>(userDTO, HttpStatus.CREATED);
+        return new ResponseEntity<>(userDTO, HttpStatus.CREATED);
     }   
 
     @PostMapping("/generate-token")
