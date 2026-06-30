@@ -20,8 +20,9 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(req -> req.disable())
-                .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/register-user", "/auth/generate-token").permitAll()
+                .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**", "/oatuh2/**", "/login/**").permitAll()
                         .anyRequest().authenticated())
+                .oauth2Login(oauth -> oauth.defaultSuccessUrl("http://localhost:5173/oauth/success", true))
                 .httpBasic(Customizer.withDefaults());
 
         return http.build();

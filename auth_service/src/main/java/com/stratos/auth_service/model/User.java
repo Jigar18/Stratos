@@ -36,6 +36,9 @@ public class User implements UserDetails {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private GitHub gitHubID;
 
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Token token;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

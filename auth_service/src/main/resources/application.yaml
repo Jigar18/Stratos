@@ -2,17 +2,6 @@ server:
   port: 8082
 
 spring:
-  security:
-    oauth2:
-      client:
-        registration:
-          github:
-            client-id: ${GITHUB_CLIENT_ID}
-            client-secret: ${GITHUB_CLIENT_SECRET}
-            scope:
-              - read:user
-              - user:email
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
   config:
     import:
       - optional:file:.env[.properties]
@@ -34,3 +23,8 @@ jwt:
   issuer: ${JWT_ISSUER}
   audience: ${JWT_AUDIENCE}
   expiration-ms: ${JWT_EXPIRATION_MS}
+
+refresh-token:
+  cookie-name: refreshToken
+  expiration-ms: ${REFRESH_TOKEN_EXPIRATION_MS:604800000}
+  cookie-secure: ${REFRESH_TOKEN_COOKIE_SECURE:false}
