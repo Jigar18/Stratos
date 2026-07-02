@@ -28,7 +28,7 @@ public class UserController {
     @Value("${refresh-token.cookie-name:refreshToken}")
     private String refreshTokenCookieName;
 
-    @Value("${refresh-token.expiration-ms:604800000}")
+    @Value("${refresh-token.expiration-ms:2592000000}")
     private long refreshTokenExpirationMs;
 
     @Value("${refresh-token.cookie-secure:false}")

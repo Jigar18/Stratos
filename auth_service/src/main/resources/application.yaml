@@ -26,5 +26,13 @@ jwt:
 
 refresh-token:
   cookie-name: refreshToken
-  expiration-ms: ${REFRESH_TOKEN_EXPIRATION_MS:604800000}
+  expiration-ms: ${REFRESH_TOKEN_EXPIRATION_MS:2592000000}
   cookie-secure: ${REFRESH_TOKEN_COOKIE_SECURE:false}
+
+github:
+  app-id: ${GITHUB_APP_ID}
+  client-id: ${GITHUB_CLIENT_ID}
+  client-secret: ${GITHUB_CLIENT_SECRET}
+  private-key-path: ${GITHUB_PRIVATE_KEY_PATH}
+  webhook-secret: ${GITHUB_WEBHOOK_SECRET}
+  redirect-uri: ${GITHUB_REDIRECT_URI}

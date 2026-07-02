@@ -22,7 +22,7 @@ public class RefreshTokenService {
 
     private final TokenRepository tokenRepository;
 
-    @Value("${refresh-token.expiration-ms:604800000}")
+    @Value("${refresh-token.expiration-ms:2592000000}")
     private long refreshTokenExpirationMs;
 
     public RefreshTokenService(TokenRepository tokenRepository) {
