@@ -17,7 +17,6 @@ spring:
     hibernate:
       ddl-auto: update
     database: postgresql
-
 jwt:
   secret-key: ${JWT_SECRET_KEY}
   issuer: ${JWT_ISSUER}
@@ -31,8 +30,8 @@ refresh-token:
 
 github:
   app-id: ${GITHUB_APP_ID}
-  client-id: ${GITHUB_CLIENT_ID}
-  client-secret: ${GITHUB_CLIENT_SECRET}
+  base-url: https://handrail-breach-bride.ngrok-free.dev
+  installation-url: ${GITHUB_APP_INSTALLATION_URL:}
+  callback-uri: https://handrail-breach-bride.ngrok-free.dev/api/github/callback
   private-key-path: ${GITHUB_PRIVATE_KEY_PATH}
   webhook-secret: ${GITHUB_WEBHOOK_SECRET}
-  redirect-uri: ${GITHUB_REDIRECT_URI}

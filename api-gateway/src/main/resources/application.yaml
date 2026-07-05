@@ -21,9 +21,7 @@ spring:
             - id: GitHub
               uri: http://localhost:8082
               predicates:
-                - Path=/github/**
-              filters:
-                - AuthFilter
+                - Path=api/github/**
 
 jwt:
   secret-key: ${JWT_SECRET_KEY}
