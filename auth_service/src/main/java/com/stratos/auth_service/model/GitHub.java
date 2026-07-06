@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
@@ -27,6 +28,14 @@ public class GitHub {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    private String accessToken;
+    private Instant accessTokenExpiresAt;
+
+    @Column(name = "refresh_token", unique = true)
+    private String refreshToken;
+
+    private Instant refreshTokenExpiresAt;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
