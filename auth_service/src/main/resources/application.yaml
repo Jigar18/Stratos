@@ -35,3 +35,5 @@ github:
   callback-uri: https://handrail-breach-bride.ngrok-free.dev/api/github/callback
   private-key-path: ${GITHUB_PRIVATE_KEY_PATH}
   webhook-secret: ${GITHUB_WEBHOOK_SECRET}
+  clientId: ${GITHUB_CLIENT_ID}
+  cleint-secret: ${GITHUB_CLIENT_SECRET}
