@@ -1,11 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
 
 const githubAppSlug = import.meta.env.VITE_GITHUB_APP_SLUG;
+const githubClientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
 const githubAppInstallationUrl =
   import.meta.env.VITE_GITHUB_APP_INSTALL_URL ||
   (githubAppSlug ? `https://github.com/apps/${githubAppSlug}/installations/new` : "");
 
+function buildGitHubAuthUrl() {
+  if (!githubClientId) {
+    return "";
+  }
+
+  const params = new URLSearchParams({
+    client_id: githubClientId,
+    redirect_uri: `${window.location.origin}/api/github/callback`,
+  });
+
+  return `https://github.com/login/oauth/authorize?${params.toString()}`;
+}
+
 function LoginPage() {
+  const githubAuthUrl = buildGitHubAuthUrl();
+  const signInUrl = githubAuthUrl || githubAppInstallationUrl;
+
   return (
     <main className="auth-page">
       <section className="auth-panel" aria-label="GitHub sign in">
@@ -13,10 +30,10 @@ function LoginPage() {
         <h1>Connect GitHub</h1>
         <a
           className="github-button"
-          href={githubAppInstallationUrl}
-          aria-disabled={!githubAppInstallationUrl}
+          href={signInUrl}
+          aria-disabled={!signInUrl}
           onClick={(event) => {
-            if (!githubAppInstallationUrl) {
+            if (!signInUrl) {
               event.preventDefault();
             }
           }}
@@ -27,6 +44,33 @@ function LoginPage() {
             </svg>
           </span>
           Sign in with GitHub
+        </a>
+      </section>
+    </main>
+  );
+}
+
+function AppInstallPage() {
+  const params = new URLSearchParams(window.location.search);
+  const login = params.get("login");
+
+  return (
+    <main className="auth-page">
+      <section className="auth-panel" aria-label="GitHub app installation">
+        <p className="eyebrow">Stratos</p>
+        <h1>Install GitHub App</h1>
+        {login ? <p className="dashboard-copy">Signed in as {login}.</p> : null}
+        <a
+          className="github-button"
+          href={githubAppInstallationUrl}
+          aria-disabled={!githubAppInstallationUrl}
+          onClick={(event) => {
+            if (!githubAppInstallationUrl) {
+              event.preventDefault();
+            }
+          }}
+        >
+          Install Stratos-JT
         </a>
       </section>
     </main>
@@ -75,6 +119,10 @@ export default function App() {
   return useMemo(() => {
     if (pathname === "/dashboard") {
       return <DashboardPage />;
+    }
+
+    if (pathname === "/app-install") {
+      return <AppInstallPage />;
     }
 
     if (pathname === "/github/installation/success") {

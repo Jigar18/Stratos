@@ -32,7 +32,7 @@ github:
   app-id: ${GITHUB_APP_ID}
   base-url: https://handrail-breach-bride.ngrok-free.dev
   installation-url: ${GITHUB_APP_INSTALLATION_URL:}
-  callback-uri: https://handrail-breach-bride.ngrok-free.dev/api/github/callback
+  callback-uri: ${GITHUB_REDIRECT_URI}
   private-key-path: ${GITHUB_PRIVATE_KEY_PATH}
   webhook-secret: ${GITHUB_WEBHOOK_SECRET}
   clientId: ${GITHUB_CLIENT_ID}

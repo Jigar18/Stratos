@@ -39,6 +39,8 @@ public class User implements UserDetails {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Token token;
 
+    private String installationId;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

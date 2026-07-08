@@ -33,11 +33,18 @@ public class GithubAuthService {
     private String clientSecret;
 
     @Transactional
-    public User processGithubLogin(String code) {
+    public User processGithubLogin(String code, String installationId) {
         GithubTokenResponseDTO token = fetchAccessToken(code);
         String accessToken = token.accessToken();
         GithubUserDTO githubUserDTO = fetchGithubUser(accessToken);
-        return fetchUser(githubUserDTO, token);
+        User user = fetchUser(githubUserDTO, token);
+
+        if (hasText(installationId) && !installationId.equals(user.getInstallationId())) {
+            user.setInstallationId(installationId);
+            userRepository.saveAndFlush(user);
+        }
+
+        return user;
     }
 
     private GithubTokenResponseDTO fetchAccessToken(String code) {
@@ -90,6 +97,10 @@ public class GithubAuthService {
                 ? message
                 : message + ": " + responseBody;
         return new ResponseStatusException(HttpStatus.UNAUTHORIZED, reason, e);
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private User fetchUser(GithubUserDTO githubUserDTO, GithubTokenResponseDTO githubTokenResponseDTO) {

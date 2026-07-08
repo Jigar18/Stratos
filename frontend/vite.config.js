@@ -5,5 +5,6 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    allowedHosts: ["handrail-breach-bride.ngrok-free.dev"],
   },
 });

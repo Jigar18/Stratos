@@ -27,7 +27,7 @@ public class GitHub {
     private String gitHubUserName;
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     private String accessToken;
     private Instant accessTokenExpiresAt;
@@ -43,6 +43,6 @@ public class GitHub {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        createdAt = Instant.now();
     }
 }
