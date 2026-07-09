@@ -3,9 +3,9 @@ package com.stratos.auth_service.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record GithubTokenResponseDTO(@JsonProperty("access_token") String accessToken,
-                                     @JsonProperty("expires_in") long accessTokenExpiresIn,
+                                     @JsonProperty("expires_in") Long accessTokenExpiresIn,
                                      @JsonProperty("refresh_token") String refreshToken,
-                                     @JsonProperty("refresh_token_expires_in") long refreshTokenExpiresIn,
+                                     @JsonProperty("refresh_token_expires_in") Long refreshTokenExpiresIn,
                                      @JsonProperty("token_type") String tokenType,
                                      String scope,
                                      String error,

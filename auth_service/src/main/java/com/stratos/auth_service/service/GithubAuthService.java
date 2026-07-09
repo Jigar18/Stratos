@@ -37,7 +37,7 @@ public class GithubAuthService {
         GithubTokenResponseDTO token = fetchAccessToken(code);
         String accessToken = token.accessToken();
         GithubUserDTO githubUserDTO = fetchGithubUser(accessToken);
-        User user = fetchUser(githubUserDTO, token);
+        User user = fetchUser(githubUserDTO, token, installationId);
 
         if (hasText(installationId) && !installationId.equals(user.getInstallationId())) {
             user.setInstallationId(installationId);
@@ -103,19 +103,15 @@ public class GithubAuthService {
         return value != null && !value.isBlank();
     }
 
-    private User fetchUser(GithubUserDTO githubUserDTO, GithubTokenResponseDTO githubTokenResponseDTO) {
+    private User fetchUser(GithubUserDTO githubUserDTO, GithubTokenResponseDTO githubTokenResponseDTO, String installationId) {
         Optional<GitHub> existingUser = githubRepository.findByGitHubUserID(githubUserDTO.githubUserId());
-
-        Instant now = Instant.now();
-        Instant accessTokenExpiry = now.plusSeconds(githubTokenResponseDTO.accessTokenExpiresIn());
-        Instant refreshTokenExpiry = now.plusSeconds(githubTokenResponseDTO.refreshTokenExpiresIn());
 
         if (existingUser.isPresent()) {
             GitHub gitHub = existingUser.get();
-            gitHub.setAccessToken(githubTokenResponseDTO.accessToken());
-            gitHub.setRefreshToken(githubTokenResponseDTO.refreshToken());
-            gitHub.setAccessTokenExpiresAt(accessTokenExpiry);
-            gitHub.setRefreshTokenExpiresAt(refreshTokenExpiry);
+            applyGithubTokenResponse(gitHub, githubTokenResponseDTO);
+            if (hasText(installationId)) {
+                gitHub.setInstallationId(installationId);
+            }
             githubRepository.saveAndFlush(gitHub);
             return gitHub.getUser();
         }
@@ -129,12 +125,40 @@ public class GithubAuthService {
         gitHub.setUser(user);
         gitHub.setGitHubUserID(githubUserDTO.githubUserId());
         gitHub.setGitHubUserName(githubUserDTO.username());
-        gitHub.setAccessToken(githubTokenResponseDTO.accessToken());
-        gitHub.setRefreshToken(githubTokenResponseDTO.refreshToken());
-        gitHub.setAccessTokenExpiresAt(accessTokenExpiry);
-        gitHub.setRefreshTokenExpiresAt(refreshTokenExpiry);
+        if (hasText(installationId)) {
+            gitHub.setInstallationId(installationId);
+        }
+        applyGithubTokenResponse(gitHub, githubTokenResponseDTO);
         githubRepository.saveAndFlush(gitHub);
 
         return user;
+    }
+
+    private void applyGithubTokenResponse(GitHub gitHub, GithubTokenResponseDTO token) {
+        if (hasText(token.accessToken())) {
+            gitHub.setAccessToken(token.accessToken());
+        }
+
+        Instant accessTokenExpiry = calculateExpiry(token.accessTokenExpiresIn());
+        if (accessTokenExpiry != null) {
+            gitHub.setAccessTokenExpiresAt(accessTokenExpiry);
+        }
+
+        if (hasText(token.refreshToken())) {
+            gitHub.setRefreshToken(token.refreshToken());
+
+            Instant refreshTokenExpiry = calculateExpiry(token.refreshTokenExpiresIn());
+            if (refreshTokenExpiry != null) {
+                gitHub.setRefreshTokenExpiresAt(refreshTokenExpiry);
+            }
+        }
+    }
+
+    private Instant calculateExpiry(Long expiresInSeconds) {
+        if (expiresInSeconds == null || expiresInSeconds <= 0) {
+            return null;
+        }
+
+        return Instant.now().plusSeconds(expiresInSeconds);
     }
 }

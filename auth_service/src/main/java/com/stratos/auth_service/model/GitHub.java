@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -25,6 +24,9 @@ public class GitHub {
 
     @Column(name = "github_user_name")
     private String gitHubUserName;
+
+    @Column(name = "installation_id")
+    private String installationId;
 
     @Column(name = "created_at")
     private Instant createdAt;
