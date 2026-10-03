@@ -47,16 +47,18 @@ public class JWTUtil {
                 .compact();
     }
 
-    private Claims getClaims(String token){
+    public Claims validateToken(String token){
         return Jwts
                 .parser()
-                .verifyWith((SecretKey) getSigningKeys())
+                .verifyWith(getSigningKeys())
+                .requireIssuer(issuer)
+                .requireAudience(audience)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
     }
 
     public Date getExpirationDate(String token){
-        return getClaims(token).getExpiration();
+        return validateToken(token).getExpiration();
     }
 }

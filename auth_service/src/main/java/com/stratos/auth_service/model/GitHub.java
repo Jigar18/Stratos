@@ -28,6 +28,10 @@ public class GitHub {
     @Column(name = "installation_id")
     private String installationId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "installation_status")
+    private InstallationStatus installationStatus;
+
     @Column(name = "created_at")
     private Instant createdAt;
 

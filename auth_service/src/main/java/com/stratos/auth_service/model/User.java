@@ -24,7 +24,8 @@ public class User implements UserDetails {
     private String username;
     private String password;
 
-    @Column(unique = true, nullable = false)
+    // GitHub sign-ups have no email when the user keeps theirs private.
+    @Column(unique = true)
     private String email;
 
     @Column(name = "created_at")
@@ -38,8 +39,6 @@ public class User implements UserDetails {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Token token;
-
-    private String installationId;
 
     @PrePersist
     protected void onCreate() {

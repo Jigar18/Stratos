@@ -1,164 +1,103 @@
 package com.stratos.auth_service.service;
 
-import com.stratos.auth_service.dto.GithubUserDTO;
+import com.stratos.auth_service.client.GithubClient;
+import com.stratos.auth_service.dto.GithubInstallationDTO;
 import com.stratos.auth_service.dto.GithubTokenResponseDTO;
+import com.stratos.auth_service.dto.GithubUserDTO;
+import com.stratos.auth_service.dto.InstallationStatusDTO;
 import com.stratos.auth_service.model.GitHub;
+import com.stratos.auth_service.model.InstallationStatus;
 import com.stratos.auth_service.model.User;
 import com.stratos.auth_service.repository.GithubRepository;
 import com.stratos.auth_service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientResponseException;
 
-import java.time.Instant;
-import java.util.Map;
-import java.util.Optional;
-
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
 public class GithubAuthService {
-    private final RestClient restClient;
+    private final GithubClient githubClient;
+    private final GithubTokenService githubTokenService;
     private final GithubRepository githubRepository;
     private final UserRepository userRepository;
 
-    @Value("${github.clientId}")
-    private String clientId;
-    @Value("${github.client-secret}")
-    private String clientSecret;
-
     @Transactional
-    public User processGithubLogin(String code, String installationId) {
-        GithubTokenResponseDTO token = fetchAccessToken(code);
-        String accessToken = token.accessToken();
-        GithubUserDTO githubUserDTO = fetchGithubUser(accessToken);
-        User user = fetchUser(githubUserDTO, token, installationId);
+    public GitHub processGithubLogin(String code, Long installationId) {
+        GithubTokenResponseDTO token = githubClient.exchangeCode(code);
+        GithubUserDTO profile = githubClient.fetchUser(token.accessToken());
 
-        if (hasText(installationId) && !installationId.equals(user.getInstallationId())) {
-            user.setInstallationId(installationId);
-            userRepository.saveAndFlush(user);
+        GitHub account = githubRepository.findByGitHubUserID(profile.githubUserId())
+                .orElseGet(() -> createAccount(profile));
+        account.setGitHubUserName(profile.username());
+        githubTokenService.storeTokens(account, token);
+
+        if (installationId != null) {
+            GithubInstallationDTO installation = githubClient.findInstallation(token.accessToken(), installationId)
+                    .orElseThrow(GithubAuthService::installationNotAccessible);
+            setInstallation(account, installation);
+        } else if (account.getInstallationId() != null) {
+            // Re-check the stored installation in case an uninstall webhook was missed.
+            githubClient.findInstallation(token.accessToken(), Long.parseLong(account.getInstallationId()))
+                    .ifPresentOrElse(installation -> setInstallation(account, installation), () -> {
+                        account.setInstallationId(null);
+                        account.setInstallationStatus(null);
+                    });
         }
-
-        return user;
+        return githubRepository.save(account);
     }
 
-    private GithubTokenResponseDTO fetchAccessToken(String code) {
-        Map<String, Object> body = Map.of(
-                "client_id", clientId,
-                "client_secret", clientSecret,
-                "code", code
-        );
-
-        GithubTokenResponseDTO token;
-        try {
-            token = restClient.post()
-                    .uri("https://github.com/login/oauth/access_token")
-                    .header("Accept", "application/json")
-                    .body(body)
-                    .retrieve()
-                    .body(GithubTokenResponseDTO.class);
-        } catch (RestClientResponseException e) {
-            throw githubAuthFailure("GitHub access-token exchange failed", e);
-        }
-
-        if (token == null || token.accessToken() == null || token.accessToken().isBlank()) {
-            String message = token != null && token.errorDescription() != null
-                    ? token.errorDescription()
-                    : "GitHub did not return an access token";
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message);
-        }
-
-        return token;
+    public InstallationStatusDTO getInstallation(long userId) {
+        return githubRepository.findByUserId(userId)
+                .map(InstallationStatusDTO::from)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "Connect GitHub first"));
     }
 
-    private GithubUserDTO fetchGithubUser(String accessToken) {
-        try {
-            return restClient.get()
-                .uri("https://api.github.com/user")
-                .header("Authorization", "Bearer " + accessToken)
-                .header("Accept", "application/vnd.github+json")
-                .header("X-GitHub-Api-Version", "2022-11-28")
-                .header(HttpHeaders.USER_AGENT, "Stratos")
-                .retrieve()
-                .body(GithubUserDTO.class);
-        } catch (RestClientResponseException e) {
-            throw githubAuthFailure("GitHub user lookup failed", e);
+    public InstallationStatusDTO linkInstallation(long userId, long installationId) {
+        String accessToken = githubTokenService.getAccessToken(userId);
+        GithubInstallationDTO installation = githubClient.findInstallation(accessToken, installationId)
+                .orElseThrow(GithubAuthService::installationNotAccessible);
+
+        String id = String.valueOf(installation.id());
+        githubRepository.updateInstallation(userId, id, installation.status());
+        return new InstallationStatusDTO(id, installation.status().name());
+    }
+
+    // Webhooks only update accounts that were already linked through a verified sign-in.
+    public void handleInstallationEvent(String action, GithubInstallationDTO installation) {
+        String installationId = String.valueOf(installation.id());
+        switch (action) {
+            case "deleted" -> githubRepository.disconnectInstallation(installationId);
+            case "suspend" -> githubRepository.updateInstallationStatus(installationId, InstallationStatus.SUSPENDED);
+            case "unsuspend" -> githubRepository.updateInstallationStatus(installationId, InstallationStatus.ACTIVE);
+            default -> { }
         }
     }
 
-    private ResponseStatusException githubAuthFailure(String message, RestClientResponseException e) {
-        String responseBody = e.getResponseBodyAsString();
-        String reason = responseBody.isBlank()
-                ? message
-                : message + ": " + responseBody;
-        return new ResponseStatusException(HttpStatus.UNAUTHORIZED, reason, e);
-    }
-
-    private boolean hasText(String value) {
-        return value != null && !value.isBlank();
-    }
-
-    private User fetchUser(GithubUserDTO githubUserDTO, GithubTokenResponseDTO githubTokenResponseDTO, String installationId) {
-        Optional<GitHub> existingUser = githubRepository.findByGitHubUserID(githubUserDTO.githubUserId());
-
-        if (existingUser.isPresent()) {
-            GitHub gitHub = existingUser.get();
-            applyGithubTokenResponse(gitHub, githubTokenResponseDTO);
-            if (hasText(installationId)) {
-                gitHub.setInstallationId(installationId);
-            }
-            githubRepository.saveAndFlush(gitHub);
-            return gitHub.getUser();
+    private GitHub createAccount(GithubUserDTO profile) {
+        // Never attach a GitHub identity to an existing account just because the usernames match.
+        if (userRepository.existsByUsername(profile.username())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "The username " + profile.username() + " is already taken by another Stratos account");
         }
-
         User user = new User();
-        user.setUsername(githubUserDTO.username());
-        user.setEmail(githubUserDTO.email());
-        user = userRepository.save(user);
+        user.setUsername(profile.username());
+        user.setEmail(profile.email());
 
-        GitHub gitHub = new GitHub();
-        gitHub.setUser(user);
-        gitHub.setGitHubUserID(githubUserDTO.githubUserId());
-        gitHub.setGitHubUserName(githubUserDTO.username());
-        if (hasText(installationId)) {
-            gitHub.setInstallationId(installationId);
-        }
-        applyGithubTokenResponse(gitHub, githubTokenResponseDTO);
-        githubRepository.saveAndFlush(gitHub);
-
-        return user;
+        GitHub account = new GitHub();
+        account.setUser(userRepository.save(user));
+        account.setGitHubUserID(profile.githubUserId());
+        return account;
     }
 
-    private void applyGithubTokenResponse(GitHub gitHub, GithubTokenResponseDTO token) {
-        if (hasText(token.accessToken())) {
-            gitHub.setAccessToken(token.accessToken());
-        }
-
-        Instant accessTokenExpiry = calculateExpiry(token.accessTokenExpiresIn());
-        if (accessTokenExpiry != null) {
-            gitHub.setAccessTokenExpiresAt(accessTokenExpiry);
-        }
-
-        if (hasText(token.refreshToken())) {
-            gitHub.setRefreshToken(token.refreshToken());
-
-            Instant refreshTokenExpiry = calculateExpiry(token.refreshTokenExpiresIn());
-            if (refreshTokenExpiry != null) {
-                gitHub.setRefreshTokenExpiresAt(refreshTokenExpiry);
-            }
-        }
+    private void setInstallation(GitHub account, GithubInstallationDTO installation) {
+        account.setInstallationId(String.valueOf(installation.id()));
+        account.setInstallationStatus(installation.status());
     }
 
-    private Instant calculateExpiry(Long expiresInSeconds) {
-        if (expiresInSeconds == null || expiresInSeconds <= 0) {
-            return null;
-        }
-
-        return Instant.now().plusSeconds(expiresInSeconds);
+    private static ResponseStatusException installationNotAccessible() {
+        return new ResponseStatusException(HttpStatus.FORBIDDEN, "This GitHub installation is not accessible to you");
     }
 }
