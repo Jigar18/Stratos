@@ -1,4 +1,4 @@
-package com.codeploy.github_service;
+package com.stratos.github_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

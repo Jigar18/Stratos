@@ -1,4 +1,4 @@
-package com.codeploy.github_service;
+package com.stratos.github_service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
