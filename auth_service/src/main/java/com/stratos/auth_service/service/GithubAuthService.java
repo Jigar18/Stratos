@@ -5,6 +5,8 @@ import com.stratos.auth_service.dto.GithubInstallationDTO;
 import com.stratos.auth_service.dto.GithubTokenResponseDTO;
 import com.stratos.auth_service.dto.GithubUserDTO;
 import com.stratos.auth_service.dto.InstallationStatusDTO;
+import com.stratos.auth_service.exception.InstallationNotAccessibleException;
+import com.stratos.auth_service.exception.UsernameTakenException;
 import com.stratos.auth_service.model.GitHub;
 import com.stratos.auth_service.model.InstallationStatus;
 import com.stratos.auth_service.model.User;
@@ -36,7 +38,7 @@ public class GithubAuthService {
 
         if (installationId != null) {
             GithubInstallationDTO installation = githubClient.findInstallation(token.accessToken(), installationId)
-                    .orElseThrow(GithubAuthService::installationNotAccessible);
+                    .orElseThrow(InstallationNotAccessibleException::new);
             setInstallation(account, installation);
         } else if (account.getInstallationId() != null) {
             // Re-check the stored installation in case an uninstall webhook was missed.
@@ -58,7 +60,7 @@ public class GithubAuthService {
     public InstallationStatusDTO linkInstallation(long userId, long installationId) {
         String accessToken = githubTokenService.getAccessToken(userId);
         GithubInstallationDTO installation = githubClient.findInstallation(accessToken, installationId)
-                .orElseThrow(GithubAuthService::installationNotAccessible);
+                .orElseThrow(InstallationNotAccessibleException::new);
 
         String id = String.valueOf(installation.id());
         githubRepository.updateInstallation(userId, id, installation.status());
@@ -79,8 +81,7 @@ public class GithubAuthService {
     private GitHub createAccount(GithubUserDTO profile) {
         // Never attach a GitHub identity to an existing account just because the usernames match.
         if (userRepository.existsByUsername(profile.username())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "The username " + profile.username() + " is already taken by another Stratos account");
+            throw new UsernameTakenException(profile.username());
         }
         User user = new User();
         user.setUsername(profile.username());
@@ -95,9 +96,5 @@ public class GithubAuthService {
     private void setInstallation(GitHub account, GithubInstallationDTO installation) {
         account.setInstallationId(String.valueOf(installation.id()));
         account.setInstallationStatus(installation.status());
-    }
-
-    private static ResponseStatusException installationNotAccessible() {
-        return new ResponseStatusException(HttpStatus.FORBIDDEN, "This GitHub installation is not accessible to you");
     }
 }

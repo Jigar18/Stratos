@@ -1,10 +1,14 @@
 package com.stratos.auth_service.controller;
 
+import com.stratos.auth_service.exception.GithubAuthorizationException;
+import com.stratos.auth_service.exception.InstallationNotAccessibleException;
+import com.stratos.auth_service.exception.UsernameTakenException;
 import com.stratos.auth_service.model.GitHub;
 import com.stratos.auth_service.model.InstallationStatus;
 import com.stratos.auth_service.service.GithubAuthService;
 import com.stratos.auth_service.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -15,7 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
@@ -23,6 +27,7 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.Base64;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/github")
@@ -72,18 +77,35 @@ public class GithubAuthController {
         return redirectWithState(installUri, state);
     }
 
+    // The browser lands here straight from github.com, so a failure redirects to the sign-in page
+    // with an error code instead of returning an error response nobody would see rendered.
     @GetMapping("/callback")
-    public ResponseEntity<Void> callback(@RequestParam String code,
-                                         @RequestParam String state,
+    public ResponseEntity<Void> callback(@RequestParam(required = false) String code,
+                                         @RequestParam(required = false) String state,
+                                         @RequestParam(required = false) String error,
                                          @RequestParam(name = "installation_id", required = false) Long installationId,
                                          @CookieValue(name = STATE_COOKIE_NAME, required = false) String expectedState) {
         // The state must match the cookie set when this browser started the flow, which stops
         // an attacker from signing a victim into the attacker's account (login CSRF).
-        if (!state.equals(expectedState)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid OAuth state");
+        if (state == null || !state.equals(expectedState)) {
+            return redirectToSignIn("invalid_state");
+        }
+        // GitHub sends an error in place of the code when the user cancels on its authorization page.
+        if (code == null) {
+            return redirectToSignIn("access_denied".equals(error) ? "access_denied" : "sign_in_failed");
         }
 
-        GitHub account = githubAuthService.processGithubLogin(code, installationId);
+        GitHub account;
+        try {
+            account = githubAuthService.processGithubLogin(code, installationId);
+        } catch (UsernameTakenException e) {
+            return redirectToSignIn("username_taken");
+        } catch (InstallationNotAccessibleException e) {
+            return redirectToSignIn("installation_not_accessible");
+        } catch (GithubAuthorizationException | RestClientException e) {
+            log.warn("GitHub sign-in failed", e);
+            return redirectToSignIn("sign_in_failed");
+        }
         String username = account.getUser().getUsername();
         String refreshToken = userService.provideRefreshToken(username);
 
@@ -100,6 +122,14 @@ public class GithubAuthController {
                 .header(HttpHeaders.SET_COOKIE, buildRefreshTokenCookie(refreshToken).toString())
                 .header(HttpHeaders.SET_COOKIE, buildStateCookie("", Duration.ZERO).toString())
                 .build();
+    }
+
+    private ResponseEntity<Void> redirectToSignIn(String errorCode) {
+        URI signInUri = UriComponentsBuilder.fromUriString(baseURL + "/")
+                .queryParam("error", errorCode)
+                .build()
+                .toUri();
+        return ResponseEntity.status(HttpStatus.FOUND).location(signInUri).build();
     }
 
     private String generateState() {
