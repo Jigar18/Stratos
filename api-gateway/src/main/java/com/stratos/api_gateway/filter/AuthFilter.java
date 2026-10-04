@@ -16,23 +16,11 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Set;
 
 @Component
 public class AuthFilter implements GlobalFilter, Ordered {
     private static final String USER_ID_HEADER = "X-User-Id";
     private static final String USERNAME_HEADER = "X-Username";
-
-    private static final Set<String> PUBLIC_ENDPOINTS = Set.of(
-            "POST /auth/register-user",
-            "POST /auth/generate-token",
-            "POST /auth/refresh-token",
-            "POST /auth/revoke-refresh-token",
-            "GET /api/github/login",
-            "GET /api/github/install",
-            "GET /api/github/callback",
-            "POST /api/github/webhook"
-    );
 
     private final JWTUtil jwtUtil;
 
@@ -84,7 +72,7 @@ public class AuthFilter implements GlobalFilter, Ordered {
     private boolean requiresAuthentication(ServerHttpRequest request) {
         String path = request.getPath().value();
         boolean isBackendPath = path.startsWith("/auth/") || path.startsWith("/api/");
-        return isBackendPath && !PUBLIC_ENDPOINTS.contains(request.getMethod().name() + " " + path);
+        return isBackendPath && !PublicEndpoint.matches(request.getMethod(), path);
     }
 
     private Mono<Void> unauthorized(ServerWebExchange exchange, String message) {
