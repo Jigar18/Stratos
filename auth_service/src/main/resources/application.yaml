@@ -17,6 +17,9 @@ spring:
     hibernate:
       ddl-auto: update
     database: postgresql
+  mvc:
+    problemdetails:
+      enabled: true
 jwt:
   secret-key: ${JWT_SECRET_KEY}
   issuer: ${JWT_ISSUER}
