@@ -37,3 +37,4 @@ github:
   webhook-secret: ${GITHUB_WEBHOOK_SECRET}
   clientId: ${GITHUB_CLIENT_ID}
   client-secret: ${GITHUB_CLIENT_SECRET}
+  token-encryption-key: ${GITHUB_TOKEN_ENCRYPTION_KEY}

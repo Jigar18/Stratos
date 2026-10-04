@@ -1,5 +1,6 @@
 package com.stratos.auth_service.model;
 
+import com.stratos.auth_service.util.EncryptedStringConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -35,10 +36,14 @@ public class GitHub {
     @Column(name = "created_at")
     private Instant createdAt;
 
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(name = "access_token", length = 512)
     private String accessToken;
+
     private Instant accessTokenExpiresAt;
 
-    @Column(name = "refresh_token", unique = true)
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(name = "refresh_token", length = 512)
     private String refreshToken;
 
     private Instant refreshTokenExpiresAt;
